@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KrishiDoot - Smart Farming</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
     * {
       box-sizing: border-box;
@@ -12,23 +13,29 @@
       padding: 0;
       font-family: 'Rubik', sans-serif;
     }
+
     body {
       background: linear-gradient(to right, #e6f4ea, #d8f3dc);
       color: #1b4332;
       line-height: 1.6;
       scroll-behavior: smooth;
     }
-    header, footer, .section {
+
+    header,
+    footer,
+    .section {
       padding: 40px 20px;
       max-width: 1200px;
       margin: auto;
     }
+
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       animation: fadeInDown 1s ease-out;
     }
+
     nav a {
       margin: 0 15px;
       text-decoration: none;
@@ -36,9 +43,11 @@
       font-weight: 600;
       transition: color 0.3s;
     }
+
     nav a:hover {
       color: #2d6a4f;
     }
+
     .hero {
       text-align: center;
       padding: 100px 20px 60px;
@@ -46,17 +55,20 @@
       color: white;
       animation: fadeIn 1.5s ease-in;
     }
+
     .hero h1 {
       font-size: 3rem;
       margin-bottom: 20px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     }
+
     .hero p {
       font-size: 1.25rem;
       max-width: 600px;
       margin: 0 auto 30px;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.4);
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
     }
+
     .btn {
       background-color: #2d6a4f;
       border: none;
@@ -67,10 +79,12 @@
       transition: all 0.3s;
       cursor: pointer;
     }
+
     .btn:hover {
       background-color: #40916c;
       transform: scale(1.05);
     }
+
     .section {
       background-color: #f0fdf4;
       border-radius: 15px;
@@ -78,74 +92,102 @@
       margin-bottom: 30px;
       animation: fadeIn 1.2s ease-in;
     }
+
     .dashboard-table {
       width: 100%;
       margin-top: 20px;
       border-collapse: collapse;
     }
-    .dashboard-table th, .dashboard-table td {
+
+    .dashboard-table th,
+    .dashboard-table td {
       border: 1px solid #ccc;
       padding: 12px;
       text-align: center;
     }
+
     .cards {
       display: flex;
       gap: 20px;
       flex-wrap: wrap;
       margin-top: 30px;
     }
+
     .card {
       flex: 1 1 30%;
       background: white;
       border-radius: 15px;
       padding: 20px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       transition: transform 0.3s;
     }
+
     .card:hover {
       transform: translateY(-10px);
     }
+
     .team-members {
       display: flex;
       gap: 20px;
       justify-content: center;
       flex-wrap: wrap;
     }
+
     .member {
       text-align: center;
     }
+
     .member img {
       width: 150px;
       border-radius: 50%;
     }
+
     .footer {
       background-color: #081c15;
       color: #d8f3dc;
     }
+
     .footer-columns {
       display: flex;
       justify-content: space-between;
       flex-wrap: wrap;
     }
+
     .footer-column {
       margin: 20px;
     }
+
     .footer input {
       padding: 8px;
       margin-top: 10px;
       border-radius: 5px;
       border: none;
     }
+
     @keyframes fadeInDown {
-      0% { transform: translateY(-30px); opacity: 0; }
-      100% { transform: translateY(0); opacity: 1; }
+      0% {
+        transform: translateY(-30px);
+        opacity: 0;
+      }
+
+      100% {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
+
     @keyframes fadeIn {
-      0% { opacity: 0; }
-      100% { opacity: 1; }
+      0% {
+        opacity: 0;
+      }
+
+      100% {
+        opacity: 1;
+      }
     }
   </style>
 </head>
+
 <body>
   <header>
     <h1>🌾 KrishiDoot</h1>
@@ -161,13 +203,15 @@
   <div class="hero">
     <h1>Empowering Farmers with Smart Solutions</h1>
     <p>Analyze soil & weather data to get crop recommendations, optimize fertilizer, and save water.</p>
-    <button class="btn" onclick="document.getElementById('data').scrollIntoView({behavior: 'smooth'})">Get Started</button>
+    <button class="btn" onclick="document.getElementById('data').scrollIntoView({behavior: 'smooth'})">Get
+      Started</button>
   </div>
 
   <section class="section" id="data">
     <h2 style="text-align:center">IoT + Weather Data Input</h2>
     <div style="text-align:center; margin: 20px 0;">
-      <input type="text" id="city" placeholder="Enter your city (e.g. Delhi)" style="padding: 10px; border-radius: 8px;" />
+      <input type="text" id="city" placeholder="Enter your city (e.g. Delhi)"
+        style="padding: 10px; border-radius: 8px;" />
       <button class="btn" onclick="fetchWeatherData()">Fetch Weather</button>
     </div>
     <table class="dashboard-table">
@@ -271,7 +315,7 @@
     async function submitData() {
       const row = document.querySelector("tbody tr");
       const inputs = row.querySelectorAll("input");
-  
+
       const data = {
         moisture: inputs[0].value,
         light: inputs[1].value,
@@ -280,7 +324,7 @@
         temperature: document.getElementById("temp").textContent.replace("°C", "").trim(),
         humidity: document.getElementById("humidity").textContent.replace("%", "").trim()
       };
-  
+
       try {
         const res = await fetch("http://localhost:5000/predict", {
           method: "POST",
@@ -289,16 +333,17 @@
           },
           body: JSON.stringify(data)
         });
-  
+
         const result = await res.json();
         if (result.error) throw result.error;
-  
-        alert(Recommended Crop: ${result.crop}\nFertilizer: ${result.fertilizer}\nWater Tips: ${result.water_saving});
+
+        alert(`Recommended Crop: ${result.crop}\nFertilizer: ${result.fertilizer}\nWater Tips: ${result.water_saving}`);
       } catch (err) {
         alert("Prediction failed: " + err);
       }
     }
   </script>
-  
+
 </body>
+
 </html>
