@@ -54,3 +54,5 @@ KrishiDoot/
 ```bash
 git clone https://github.com/AnshSinghRathoree/KrishiDoot.git
 cd KrishiDoot
+
+Email: sansh8690@gmail.com
