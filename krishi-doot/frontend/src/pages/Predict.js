@@ -47,7 +47,7 @@ const Predict = () => {
     setError(null)
 
     try {
-      const response = await axios.post("http://localhost:5000/api/predict", formData)
+      const response = await axios.post("https://krishidoot-backend.onrender.com/api/predict", formData)
       setPrediction(response.data)
       if (currentUser) {
         await addDoc(collection(db, "predictions"), {
