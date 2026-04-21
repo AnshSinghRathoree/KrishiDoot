@@ -99,36 +99,9 @@ const About = () => {
             </div>
           </div>
 
-          <div className="mb-16">
-            <h2 className="text-2xl font-bold mb-6 text-center">Meet Our Team</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              <div className="team-member">
-                <img src="https://via.placeholder.com/150" alt="Team Member" />
-                <h3 className="text-lg font-semibold">Vaibhav Sharma</h3>
-                <p className="text-sm text-gray-600">Agricultural Scientist</p>
-              </div>
-
-              <div className="team-member">
-                <img src="https://via.placeholder.com/150" alt="Team Member" />
-                <h3 className="text-lg font-semibold">Vaibhav Sharma</h3>
-                <p className="text-sm text-gray-600">Data Scientist</p>
-              </div>
-
-              <div className="team-member">
-                <img src="https://via.placeholder.com/150" alt="Team Member" />
-                <h3 className="text-lg font-semibold">Mera Naam...</h3>
-                <p className="text-sm text-gray-600">Software Engineer</p>
-              </div>
-
-              <div className="team-member">
-                <img src="https://via.placeholder.com/150" alt="Team Member" />
-                <h3 className="text-lg font-semibold">Mera Naam...</h3>
-                <p className="text-sm text-gray-600">UX Designer</p>
-              </div>
-            </div>
-
+         
           </div>
-        </div>
+        
       </main>
 
       <Footer />

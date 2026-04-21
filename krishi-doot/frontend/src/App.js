@@ -4,6 +4,7 @@ import PrivateRoute from "./components/PrivateRoute"
 import Home from "./pages/Home"
 import About from "./pages/About"
 import Predict from "./pages/Predict"
+import FertilizerAdvisor from "./pages/FertilizerAdvisor"
 import Dashboard from "./pages/Dashboard"
 import Login from "./pages/auth/Login"
 import Register from "./pages/auth/Register"
@@ -18,6 +19,10 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/predict" element={<Predict />} />
+          <Route
+            path="/fertilizer-advisor"
+            element={<FertilizerAdvisor />}
+          />
 
           {/* Auth Routes */}
           <Route path="/auth/login" element={<Login />} />

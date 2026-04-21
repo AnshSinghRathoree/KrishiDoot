@@ -41,9 +41,20 @@ const Navbar = () => {
             <Link to="/predict" className="text-gray-700 hover:text-green-500 font-medium">
               Predict
             </Link>
+            <Link to="/fertilizer-advisor" className="text-gray-700 hover:text-green-500 font-medium">
+              Fertilizer
+            </Link>
             <Link to="/dashboard" className="text-gray-700 hover:text-green-500 font-medium">
               Dashboard
             </Link>
+            <a
+              href="/marketplace.html"
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-700 hover:text-green-500 font-medium transition"
+            >
+              Marketplace
+            </a>
             <Link to="/about" className="text-gray-700 hover:text-green-500 font-medium">
               About Us
             </Link>

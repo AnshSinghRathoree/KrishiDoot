@@ -1,5 +1,7 @@
 "use client"
-
+import { db } from "../firebase/config"
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { useAuth } from "../context/auth-context"
 import { useState } from "react"
 import axios from "axios"
 import Navbar from "../components/Navbar"
@@ -7,6 +9,7 @@ import Footer from "../components/Footer"
 import { FaLeaf, FaTint, FaCloudRain, FaThermometerHalf, FaTachometerAlt, FaSeedling } from "react-icons/fa"
 
 const Predict = () => {
+  const { currentUser } = useAuth()
   const [activeTab, setActiveTab] = useState("sliders")
   const [formData, setFormData] = useState({
     nitrogen: 50,
@@ -46,6 +49,15 @@ const Predict = () => {
     try {
       const response = await axios.post("http://localhost:5000/api/predict", formData)
       setPrediction(response.data)
+      if (currentUser) {
+        await addDoc(collection(db, "predictions"), {
+          userEmail: currentUser.email,
+          crop: response.data.crop,
+          confidence: response.data.confidence,
+          inputs: formData,
+          createdAt: serverTimestamp()
+        })
+      }
     } catch (err) {
       console.error("Prediction error:", err)
       setError(err.response?.data?.error || "Failed to get prediction. Please try again.")
@@ -67,8 +79,8 @@ const Predict = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <div className="lg:col-span-2">
+          <div className="flex flex-col gap-8 max-w-6xl mx-auto">
+            <div>
               <div className="card">
                 <h2 className="text-xl font-semibold mb-2">Soil and Environmental Parameters</h2>
                 <p className="text-gray-600 mb-4">
@@ -381,43 +393,108 @@ const Predict = () => {
             </div>
 
             <div>
-              <div className="card h-full">
-                <h2 className="text-xl font-semibold mb-2">Recommendation Results</h2>
-                <p className="text-gray-600 mb-4">
+              <div className="card">
+                <h2 className="text-xl font-semibold mb-1">Recommendation Results</h2>
+                <p className="text-gray-500 text-sm mb-6">
                   Our AI model will analyze your inputs and provide the best crop recommendation
                 </p>
 
                 {prediction ? (
                   <div className="space-y-6">
-                    <div className="text-center">
-                      <FaSeedling className="text-green-500 text-5xl mx-auto mb-2" />
-                      <h3 className="text-2xl font-bold capitalize">{prediction.crop}</h3>
-                      <p className="text-sm text-gray-600">Recommended with {prediction.confidence}% confidence</p>
-                    </div>
 
-                    <div className="space-y-4 pt-4 border-t">
-                      <div>
-                        <h4 className="font-semibold mb-1">Recommended Fertilizer</h4>
-                        <p className="text-sm text-gray-600">{prediction.fertilizer}</p>
+                    {/* Top recommended crop banner */}
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white text-center shadow-lg">
+                      <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <FaSeedling className="text-white text-3xl" />
                       </div>
-
-                      <div>
-                        <h4 className="font-semibold mb-1">Water Management</h4>
-                        <p className="text-sm text-gray-600">{prediction.waterSaving}</p>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold mb-1">Additional Tips</h4>
-                        <p className="text-sm text-gray-600">{prediction.additionalTips}</p>
+                      <p className="text-green-100 text-sm uppercase tracking-widest mb-1 font-medium">Best Recommended Crop</p>
+                      <h3 className="text-4xl font-extrabold capitalize mb-2">{prediction.crop}</h3>
+                      <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-1 text-sm font-semibold">
+                        ✅ {prediction.confidence}% Confidence
                       </div>
                     </div>
+
+                    {/* Top 3 crops */}
+                    {prediction.top3 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                          🏆 Top 3 Crop Options
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {prediction.top3.map((item, index) => {
+                            const configs = [
+                              {
+                                label: "Best Choice",
+                                emoji: "🥇",
+                                bg: "bg-green-50",
+                                border: "border-green-400",
+                                badge: "bg-green-500 text-white",
+                                text: "text-green-800",
+                              },
+                              {
+                                label: "Alternative",
+                                emoji: "🥈",
+                                bg: "bg-yellow-50",
+                                border: "border-yellow-400",
+                                badge: "bg-yellow-400 text-yellow-900",
+                                text: "text-yellow-800",
+                              },
+                              {
+                                label: "Less Suitable",
+                                emoji: "🥉",
+                                bg: "bg-red-50",
+                                border: "border-red-400",
+                                badge: "bg-red-500 text-white",
+                                text: "text-red-800",
+                              },
+                            ];
+                            const c = configs[index];
+                            return (
+                              <div
+                                key={index}
+                                className={`${c.bg} border-2 ${c.border} rounded-xl p-4 flex flex-col items-center text-center gap-2`}
+                              >
+                                <span className="text-2xl">{c.emoji}</span>
+                                <span className={`font-bold capitalize text-base ${c.text}`}>{item.crop}</span>
+                                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${c.badge}`}>
+                                  {c.label}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Fertilizer Plan */}
+                    <div className="bg-white rounded-2xl shadow-md border border-green-100 p-5">
+                      <h4 className="text-lg font-bold text-green-700 mb-4 flex items-center gap-2">
+                        🌱 Smart Fertilizer Plan
+                      </h4>
+                      <div className="space-y-3">
+                        {prediction.fertilizer
+                          .split(/\d+\.\s/)
+                          .filter((item) => item.trim() !== "")
+                          .map((line, index) => (
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm flex items-center justify-center font-bold shrink-0">
+                                {index + 1}
+                              </div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{line.trim()}</p>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <FaSeedling className="text-gray-300 text-5xl mx-auto mb-4" />
-                    <p className="text-gray-500">
-                      Fill in the form and submit to get your personalized crop recommendation
-                    </p>
+                  <div className="text-center py-14 border-2 border-dashed border-gray-200 rounded-2xl">
+                    <FaSeedling className="text-gray-300 text-6xl mx-auto mb-4" />
+                    <p className="text-gray-400 text-base font-medium">No results yet</p>
+                    <p className="text-gray-400 text-sm mt-1">Fill in the form above and click <span className="font-semibold text-green-500">Get Crop Recommendation</span></p>
                   </div>
                 )}
               </div>
