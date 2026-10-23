@@ -42,29 +42,62 @@ const Predict = () => {
   }
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
-      const response = await axios.post("https://krishidoot-backend.onrender.com/api/predict", formData)
-      setPrediction(response.data)
+      // Step 1: Get crop prediction from the backend
+      const response = await axios.post(
+        "https://krishidoot-backend.onrender.com/api/predict",
+        formData
+      );
+
+      const result = response.data;
+
+      // Validate the backend response
+      if (!result || !result.crop) {
+        throw new Error("Invalid response from prediction server.");
+      }
+
+      // Step 2: Show the prediction immediately
+      setPrediction(result);
+
+      // Step 3: Save history separately in Firebase
       if (currentUser) {
-        await addDoc(collection(db, "predictions"), {
-          userEmail: currentUser.email,
-          crop: response.data.crop,
-          confidence: response.data.confidence,
-          inputs: formData,
-          createdAt: serverTimestamp()
-        })
+        try {
+          await addDoc(collection(db, "predictions"), {
+            userEmail: currentUser.email,
+            crop: result.crop,
+            confidence: result.confidence ?? null,
+            inputs: formData,
+            createdAt: serverTimestamp(),
+          });
+        } catch (firebaseError) {
+          console.error(
+            "Firebase history save failed:",
+            firebaseError
+          );
+
+          // Prediction still works even if history saving fails
+          setError(
+            "Crop predicted successfully, but prediction history could not be saved."
+          );
+        }
       }
     } catch (err) {
-      console.error("Prediction error:", err)
-      setError(err.response?.data?.error || "Failed to get prediction. Please try again.")
+      console.error("Crop prediction failed:", err);
+
+      setPrediction(null);
+      setError(
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to get prediction. Please try again."
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
