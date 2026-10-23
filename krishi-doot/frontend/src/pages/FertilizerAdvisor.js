@@ -1,273 +1,187 @@
-import React, { useState } from "react"
-import axios from "axios"
+import React, { useState } from "react";
+import axios from "axios";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import {
+    FaSeedling,
+    FaFlask,
+    FaLeaf,
+    FaCheckCircle,
+    FaInfoCircle
+} from "react-icons/fa";
 
 const crops = [
-    "apple",
-    "banana",
-    "blackgram",
-    "chickpea",
-    "coconut",
-    "coffee",
-    "cotton",
-    "grapes",
-    "jute",
-    "kidneybeans",
-    "lentil",
-    "maize",
-    "mango",
-    "mothbeans",
-    "mungbean",
-    "muskmelon",
-    "orange",
-    "papaya",
-    "pigeonpeas",
-    "pomegranate",
-    "rice",
-    "watermelon"
-]
+    "apple", "banana", "blackgram", "chickpea", "coconut", "coffee", "cotton",
+    "grapes", "jute", "kidneybeans", "lentil", "maize", "mango", "mothbeans",
+    "mungbean", "muskmelon", "orange", "papaya", "pigeonpeas", "pomegranate",
+    "rice", "watermelon"
+];
 
-function FertilizerAdvisor() {
-    const [form, setForm] = useState({
-        crop: "banana",
-        nitrogen: "",
-        phosphorus: "",
-        potassium: "",
-        ph: ""
-    })
+const initialForm = { crop: "banana", nitrogen: "", phosphorus: "", potassium: "", ph: "" };
 
-    const [result, setResult] = useState(null)
+const styles = `
+.kd-fert{--f-bg:#07130e;--f-panel:#10251a;--f-line:rgba(193,255,112,.17);--f-lime:#c5ff70;--f-text:#edf7ef;--f-muted:#a7b9ab;color:var(--f-text);background:radial-gradient(ellipse at 85% 0%,#1a432b 0,transparent 38%),var(--f-bg);min-height:70vh;padding:42px 0 64px}
+.kd-fert *{box-sizing:border-box}.kd-fert .kf-wrap{width:min(1120px,calc(100% - 32px));margin:auto}
+.kd-fert .kf-hero{text-align:center;max-width:760px;margin:0 auto 30px;animation:kf-rise .55s ease both}
+.kd-fert .kf-eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--f-lime);font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.kd-fert h1{font-size:clamp(30px,4vw,46px);line-height:1.1;letter-spacing:-.04em;margin:12px 0;color:var(--f-text);font-weight:800}
+.kd-fert .kf-hero p{color:var(--f-muted);font-size:16px;line-height:1.7;margin:0}
+.kd-fert .kf-grid{display:grid;grid-template-columns:minmax(300px,.85fr) minmax(0,1.15fr);gap:22px;align-items:start}
+.kd-fert .kf-card{background:linear-gradient(145deg,rgba(17,43,29,.97),rgba(9,25,17,.98));border:1px solid var(--f-line);border-radius:22px;padding:clamp(19px,3vw,28px);box-shadow:0 20px 55px rgba(0,0,0,.18);animation:kf-rise .6s ease both}
+.kd-fert .kf-card h2{font-size:21px;margin:0 0 7px;color:var(--f-text);font-weight:750}
+.kd-fert .kf-sub{color:var(--f-muted);font-size:13px;line-height:1.65;margin:0 0 21px}
+.kd-fert .kf-form{display:grid;gap:16px}.kd-fert .kf-field label{display:block;font-size:13px;font-weight:750;color:#e6f1e8;margin-bottom:8px}
+.kd-fert .kf-field input,.kd-fert .kf-field select{width:100%;background:#07150e;border:1px solid #2d4c38;border-radius:11px;padding:12px 13px;color:#f2f8f3;outline:none}
+.kd-fert .kf-field select option{background:#10251a;color:#fff}
+.kd-fert .kf-field input:focus,.kd-fert .kf-field select:focus{border-color:var(--f-lime);box-shadow:0 0 0 3px rgba(197,255,112,.1)}
+.kd-fert .kf-unit{color:#8fa596;font-size:11px;margin-top:6px}
+.kd-fert .kf-submit{width:100%;border:0;border-radius:12px;background:var(--f-lime);color:#122315;font-weight:850;padding:14px 16px;margin-top:3px;cursor:pointer;transition:transform .18s,filter .18s}
+.kd-fert .kf-submit:hover{filter:brightness(1.06);transform:translateY(-2px)}.kd-fert .kf-submit:disabled{opacity:.65;cursor:wait;transform:none}
+.kd-fert .kf-alert{border-radius:11px;padding:12px 14px;font-size:13px;line-height:1.55}.kd-fert .kf-error{background:#391c1b;color:#ffd8d5;border:1px solid #81413c}
+.kd-fert .kf-placeholder{text-align:center;padding:42px 20px;border:1px dashed #385341;border-radius:16px}
+.kd-fert .kf-placeholdericon{width:60px;height:60px;display:grid;place-items:center;margin:0 auto 14px;border-radius:18px;background:#1a3624;color:var(--f-lime);font-size:26px}
+.kd-fert .kf-placeholder h3{font-size:17px;margin:0 0 7px;color:#eaf4eb}.kd-fert .kf-placeholder p{font-size:13px;color:var(--f-muted);line-height:1.65;margin:0}
+.kd-fert .kf-resulthead{display:flex;align-items:center;gap:13px;background:linear-gradient(130deg,#204d2e,#102d1e);border:1px solid rgba(197,255,112,.25);border-radius:15px;padding:17px;margin-bottom:19px}
+.kd-fert .kf-resulticon{width:44px;height:44px;border-radius:13px;background:rgba(197,255,112,.12);display:grid;place-items:center;color:var(--f-lime);font-size:20px;flex-shrink:0}
+.kd-fert .kf-resulthead h3{font-size:20px;font-weight:800;margin:0 0 3px;text-transform:capitalize;color:#fff}
+.kd-fert .kf-resulthead p{font-size:12px;color:#c4d9c8;margin:0}
+.kd-fert .kf-sectiontitle{font-size:15px;font-weight:800;margin:20px 0 10px;color:#eaf4eb;display:flex;align-items:center;gap:8px}
+.kd-fert .kf-advice{display:grid;gap:9px}.kd-fert .kf-adviceitem{display:flex;gap:10px;align-items:flex-start;background:#0a1910;border:1px solid #254431;border-radius:11px;padding:12px 13px;color:#d3e0d5;font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.kd-fert .kf-adviceitem svg{color:var(--f-lime);margin-top:3px;flex-shrink:0}
+.kd-fert .kf-note{margin-top:18px;background:rgba(197,255,112,.06);border:1px solid rgba(197,255,112,.18);border-radius:12px;padding:13px;color:#bdcfbf;font-size:12px;line-height:1.65}
+@keyframes kf-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:800px){.kd-fert .kf-grid{grid-template-columns:1fr}.kd-fert{padding-top:30px}}
+@media(prefers-reduced-motion:reduce){.kd-fert *{animation:none!important;transition:none!important}}
+`;
 
-    const handleChange = (e) => {
-        setForm({
-            ...form,
-            [e.target.name]: e.target.value
-        })
-    }
+export default function FertilizerAdvisor() {
+    const [form, setForm] = useState(initialForm);
+    const [result, setResult] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault()
+    const handleChange = (event) => {
+        setForm(prev => ({ ...prev, [event.target.name]: event.target.value }));
+        setResult(null);
+        setError("");
+    };
 
-        try {
-            const res = await axios.post(
-                "https://krishidoot-backend.onrender.com/api/fertilizer-advisor",
-                form
-            )
-
-            setResult(res.data)
-        } catch (error) {
-            alert("Unable to fetch fertilizer advice")
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setError("");
+        setResult(null);
+        const required = ["nitrogen", "phosphorus", "potassium", "ph"];
+        for (const key of required) {
+            if (form[key] === "" || !Number.isFinite(Number(form[key]))) {
+                setError("Please enter a value for every soil parameter.");
+                return;
+            }
         }
-    }
+        const bounds = [
+            ["nitrogen", 0, 140, "Nitrogen"], ["phosphorus", 0, 140, "Phosphorus"],
+            ["potassium", 0, 140, "Potassium"], ["ph", 0, 14, "Soil pH"]
+        ];
+        for (const [key, min, max, label] of bounds) {
+            if (Number(form[key]) < min || Number(form[key]) > max) {
+                setError(`${label} must be between ${min} and ${max}.`);
+                return;
+            }
+        }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-green-50 to-white py-10 px-4">
-            <div className="max-w-6xl mx-auto">
+        setLoading(true);
+        try {
+            const payload = {
+                crop: form.crop,
+                nitrogen: Number(form.nitrogen),
+                phosphorus: Number(form.phosphorus),
+                potassium: Number(form.potassium),
+                ph: Number(form.ph)
+            };
+            const response = await axios.post(
+                "https://krishidoot-backend.onrender.com/api/fertilizer-advisor",
+                payload,
+                { timeout: 45000 }
+            );
+            if (!response.data || (!Array.isArray(response.data.advice) && typeof response.data.advice !== "string")) {
+                throw new Error("The fertilizer service returned an unexpected response. Please try again.");
+            }
+            setResult(response.data);
+        } catch (err) {
+            console.error("Fertilizer advice failed:", err);
+            setError(err.response?.data?.error || (err.code === "ECONNABORTED"
+                ? "The fertilizer service took too long to respond. Please try again."
+                : err.message || "Unable to fetch fertilizer advice. Please try again."));
+        } finally {
+            setLoading(false);
+        }
+    };
 
-                {/* Header */}
-                <div className="text-center mb-10">
-                    <h1 className="text-5xl font-bold text-green-700 mb-3">
-                        🌱 Fertilizer Advisor
-                    </h1>
-                    <p className="text-gray-600 text-lg">
-                        AI-powered fertilizer recommendations for better crop growth
-                    </p>
-                </div>
+    const adviceItems = result
+        ? (Array.isArray(result.advice) ? result.advice : String(result.advice).split(/\n|(?<=\.)\s+(?=[A-Z•-])/).map(s => s.trim()).filter(Boolean))
+        : [];
 
-                <div className="grid md:grid-cols-2 gap-8">
-
-                    {/* Form Card */}
-                    <div className="bg-white rounded-3xl shadow-xl p-8 border border-green-100">
-                        <h2 className="text-2xl font-semibold text-green-700 mb-6">
-                            Enter Soil Details
-                        </h2>
-
-                        <form onSubmit={handleSubmit} className="space-y-4">
-
-                            <select
-                                name="crop"
-                                value={form.crop}
-                                onChange={handleChange}
-                                className="w-full border rounded-xl px-4 py-3"
-                            >
-                                {crops.map((crop, index) => (
-                                    <option key={index} value={crop}>
-                                        {crop.charAt(0).toUpperCase() + crop.slice(1)}
-                                    </option>
-                                ))}
-                            </select>
-
-                            <input
-                                type="number"
-                                name="nitrogen"
-                                placeholder="Nitrogen (N)"
-                                onChange={handleChange}
-                                className="w-full border rounded-xl px-4 py-3"
-                            />
-
-                            <input
-                                type="number"
-                                name="phosphorus"
-                                placeholder="Phosphorus (P)"
-                                onChange={handleChange}
-                                className="w-full border rounded-xl px-4 py-3"
-                            />
-
-                            <input
-                                type="number"
-                                name="potassium"
-                                placeholder="Potassium (K)"
-                                onChange={handleChange}
-                                className="w-full border rounded-xl px-4 py-3"
-                            />
-
-                            <input
-                                type="number"
-                                step="0.1"
-                                name="ph"
-                                placeholder="pH Value"
-                                onChange={handleChange}
-                                className="w-full border rounded-xl px-4 py-3"
-                            />
-
-                            <button className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl text-lg font-semibold transition">
-                                Get Smart Advice
-                            </button>
-                        </form>
-                    </div>
-                    {/* Result Card */}
-                    <div className="bg-gradient-to-r from-[#083844] via-[#0a4452] to-[#0d5563] rounded-3xl shadow-2xl p-8 border border-green-400/20 text-white">
-
-                        {!result ? (
-                            <div className="text-center py-24">
-                                <h2 className="text-3xl font-bold text-green-300 mb-4">
-                                    Recommendation Result
-                                </h2>
-
-                                <p className="text-gray-300 text-lg">
-                                    Fill the form to receive fertilizer guidance
-                                </p>
+    return <>
+        <Navbar />
+        <style>{styles}</style>
+        <main className="kd-fert">
+            <div className="kf-wrap">
+                <header className="kf-hero">
+                    <span className="kf-eyebrow"><FaLeaf /> SOIL HEALTH • SMARTER INPUTS</span>
+                    <h1>Fertilizer Advisor</h1>
+                    <p>Get crop-specific guidance from your soil nutrient readings. Use a recent soil test whenever possible for more meaningful advice.</p>
+                </header>
+                <div className="kf-grid">
+                    <section className="kf-card">
+                        <h2>Soil &amp; crop details</h2>
+                        <p className="kf-sub">Enter the values from your soil report. Nutrient units should match the units expected by your model.</p>
+                        <form className="kf-form" onSubmit={handleSubmit} noValidate>
+                            <div className="kf-field">
+                                <label htmlFor="fert-crop">Crop you are growing</label>
+                                <select id="fert-crop" name="crop" value={form.crop} onChange={handleChange}>
+                                    {crops.map(crop => <option key={crop} value={crop}>{crop.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase())}</option>)}
+                                </select>
                             </div>
-                        ) : (
-                            <>
-                                {/* Heading */}
-                                <h2 className="text-4xl font-bold mb-10 leading-tight">
-                                    🌱 Results for{" "}
-                                    <span className="text-green-400 capitalize">
-                                        {result.crop}
-                                    </span>
-                                </h2>
+                            {[
+                                { key: "nitrogen", label: "Nitrogen (N)", unit: "Enter the soil-test value (kg/ha, if that is your model's unit)." },
+                                { key: "phosphorus", label: "Phosphorus (P)", unit: "Use the unit expected by your soil test and model." },
+                                { key: "potassium", label: "Potassium (K)", unit: "Use the unit expected by your soil test and model." },
+                                { key: "ph", label: "Soil pH", unit: "Typical scale: 0–14; use your measured pH." }
+                            ].map(field => <div className="kf-field" key={field.key}>
+                                <label htmlFor={`fert-${field.key}`}>{field.label}</label>
+                                <input id={`fert-${field.key}`} name={field.key} type="number" min="0" max={field.key === "ph" ? "14" : "140"} step={field.key === "ph" ? "0.1" : "any"} value={form[field.key]} onChange={handleChange} placeholder={field.key === "ph" ? "e.g. 6.5" : "Enter soil-test value"} required />
+                                <div className="kf-unit">{field.unit}</div>
+                            </div>)}
+                            {error && <div className="kf-alert kf-error" role="alert">{error}</div>}
+                            <button className="kf-submit" type="submit" disabled={loading}>{loading ? "Preparing advice…" : "Get fertilizer advice →"}</button>
+                        </form>
+                    </section>
 
-                                {/* Soil Nutrient Deficiencies */}
-                                <div className="mb-10">
-                                    <h3 className="text-2xl font-semibold mb-5">
-                                        Soil Nutrient Deficiencies:
-                                    </h3>
-
-                                    {(() => {
-                                        const ideal = {
-                                            apple: { n: 80, p: 45, k: 60 },
-                                            banana: { n: 100, p: 50, k: 80 },
-                                            blackgram: { n: 25, p: 45, k: 20 },
-                                            chickpea: { n: 30, p: 50, k: 30 },
-                                            coconut: { n: 90, p: 40, k: 100 },
-                                            coffee: { n: 90, p: 45, k: 70 },
-                                            cotton: { n: 120, p: 60, k: 60 },
-                                            grapes: { n: 80, p: 50, k: 90 },
-                                            jute: { n: 100, p: 45, k: 50 },
-                                            kidneybeans: { n: 35, p: 50, k: 30 },
-                                            lentil: { n: 30, p: 45, k: 25 },
-                                            maize: { n: 110, p: 50, k: 40 },
-                                            mango: { n: 75, p: 40, k: 70 },
-                                            mothbeans: { n: 25, p: 40, k: 20 },
-                                            mungbean: { n: 25, p: 45, k: 20 },
-                                            muskmelon: { n: 80, p: 45, k: 90 },
-                                            orange: { n: 85, p: 45, k: 75 },
-                                            papaya: { n: 90, p: 50, k: 90 },
-                                            pigeonpeas: { n: 30, p: 45, k: 25 },
-                                            pomegranate: { n: 70, p: 40, k: 80 },
-                                            rice: { n: 120, p: 60, k: 40 },
-                                            watermelon: { n: 85, p: 45, k: 95 }
-                                        }
-
-                                        const cropData = ideal[result.crop] || { n: 80, p: 40, k: 40 }
-
-                                        const nDef = Math.max(cropData.n - Number(form.nitrogen), 0)
-                                        const pDef = Math.max(cropData.p - Number(form.phosphorus), 0)
-                                        const kDef = Math.max(cropData.k - Number(form.potassium), 0)
-
-                                        return (
-                                            <ul className="space-y-3 text-lg text-gray-100">
-                                                <li>
-                                                    • Nitrogen:{" "}
-                                                    <span className="font-bold text-green-300">
-                                                        {nDef} kg/ha deficient
-                                                    </span>
-                                                </li>
-
-                                                <li>
-                                                    • Phosphorus:{" "}
-                                                    <span className="font-bold text-green-300">
-                                                        {pDef} kg/ha deficient
-                                                    </span>
-                                                </li>
-
-                                                <li>
-                                                    • Potassium:{" "}
-                                                    <span className="font-bold text-green-300">
-                                                        {kDef} kg/ha deficient
-                                                    </span>
-                                                </li>
-                                            </ul>
-                                        )
-                                    })()}
+                    <section className="kf-card" aria-live="polite">
+                        <h2>Your fertilizer guidance</h2>
+                        <p className="kf-sub">Recommendations returned by the connected fertilizer-advisor service will appear here.</p>
+                        {!result ? <div className="kf-placeholder">
+                            <div className="kf-placeholdericon"><FaFlask /></div>
+                            <h3>{loading ? "Analyzing soil details" : "Advice tailored to your crop"}</h3>
+                            <p>{loading ? "Please wait while the service processes your inputs." : "Choose your crop, enter all four soil values, and submit to see the returned guidance."}</p>
+                        </div> : <>
+                            <div className="kf-resulthead">
+                                <div className="kf-resulticon"><FaSeedling /></div>
+                                <div>
+                                    <h3>{result.crop || form.crop}</h3>
+                                    <p><FaCheckCircle style={{ display: "inline", marginRight: 5 }} />Advice received from the recommendation service</p>
                                 </div>
-
-                                {/* Chemical Fertilizer Recommendation */}
-                                <div className="mb-10">
-                                    <h3 className="text-2xl font-semibold text-green-300 mb-5">
-                                        🧪 Chemical Fertilizer Recommendation:
-                                    </h3>
-
-                                    <ul className="space-y-4 text-lg text-gray-100">
-                                        {result.advice.map((item, index) => (
-                                            <li
-                                                key={index}
-                                                className="bg-white/5 rounded-xl px-4 py-3 border border-white/10"
-                                            >
-                                                • {item}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-
-                                {/* Organic Alternatives */}
-                                <div className="mb-10">
-                                    <h3 className="text-2xl font-semibold text-green-300 mb-5">
-                                        🌿 Organic Alternatives:
-                                    </h3>
-
-                                    <ul className="space-y-3 text-lg text-gray-100">
-                                        <li>• Nitrogen: Use compost, FYM or vermicompost</li>
-                                        <li>• Phosphorus: Use bone meal or phosphate compost</li>
-                                        <li>• Potassium: Use wood ash or banana peel compost</li>
-                                    </ul>
-                                </div>
-
-                                {/* Tip */}
-                                <div className="mt-6 pt-6 border-t border-white/10">
-                                    <p className="italic text-green-200 text-xl">
-                                        Tip: Combine organic and inorganic practices for sustainable farming.
-                                    </p>
-                                </div>
-                            </>
-                        )}
-                    </div>
+                            </div>
+                            {adviceItems.length > 0 && <>
+                                <h3 className="kf-sectiontitle"><FaFlask style={{ color: "#c5ff70" }} /> Recommended actions</h3>
+                                <div className="kf-advice">{adviceItems.map((item, index) => <div className="kf-adviceitem" key={`${index}-${item}`}><FaCheckCircle /> <span>{String(item).replace(/^\s*(?:\d+[.)]\s*|[-•]\s*)/, "")}</span></div>)}</div>
+                            </>}
+                            {result.message && <div className="kf-note">{String(result.message)}</div>}
+                            <div className="kf-note"><FaInfoCircle style={{ display: "inline", marginRight: 6 }} />Nutrient requirements vary by crop variety, growth stage, soil type and region. This page does not estimate nutrient deficiencies using fixed generic targets; follow a soil-test report and local agricultural extension guidance before applying fertilizer.</div>
+                        </>}
+                    </section>
                 </div>
-
             </div>
-        </div>
-
-    )
+        </main>
+        <Footer />
+    </>;
 }
-
-export default FertilizerAdvisor

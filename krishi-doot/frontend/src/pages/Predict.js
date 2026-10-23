@@ -1,544 +1,213 @@
-"use client"
-import { db } from "../firebase/config"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
-import { useAuth } from "../context/auth-context"
-import { useState } from "react"
-import axios from "axios"
-import Navbar from "../components/Navbar"
-import Footer from "../components/Footer"
-import { FaLeaf, FaTint, FaCloudRain, FaThermometerHalf, FaTachometerAlt, FaSeedling } from "react-icons/fa"
+import React, { useState } from "react";
+import axios from "axios";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase/config";
+import { useAuth } from "../context/auth-context";
+import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import {
+  FaLeaf, FaTint, FaCloudRain, FaThermometerHalf,
+  FaTachometerAlt, FaSeedling, FaFlask, FaCheckCircle
+} from "react-icons/fa";
 
-const Predict = () => {
-  const { currentUser } = useAuth()
-  const [activeTab, setActiveTab] = useState("sliders")
-  const [formData, setFormData] = useState({
-    nitrogen: 50,
-    phosphorus: 50,
-    potassium: 50,
-    temperature: 25,
-    humidity: 50,
-    ph: 6.5,
-    rainfall: 100,
-  })
+const initialValues = {
+  nitrogen: 50, phosphorus: 50, potassium: 50,
+  temperature: 25, humidity: 50, ph: 6.5, rainfall: 100
+};
 
-  const [prediction, setPrediction] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+const fields = [
+  { key: "nitrogen", label: "Nitrogen (N)", unit: "kg/ha", min: 0, max: 140, step: 1, icon: FaLeaf },
+  { key: "phosphorus", label: "Phosphorus (P)", unit: "kg/ha", min: 0, max: 140, step: 1, icon: FaLeaf },
+  { key: "potassium", label: "Potassium (K)", unit: "kg/ha", min: 0, max: 140, step: 1, icon: FaLeaf },
+  { key: "temperature", label: "Temperature", unit: "°C", min: 0, max: 45, step: 0.1, icon: FaThermometerHalf },
+  { key: "humidity", label: "Humidity", unit: "%", min: 0, max: 100, step: 1, icon: FaTint },
+  { key: "ph", label: "Soil pH", unit: "pH", min: 0, max: 14, step: 0.1, icon: FaTachometerAlt },
+  { key: "rainfall", label: "Rainfall", unit: "mm", min: 0, max: 300, step: 1, icon: FaCloudRain },
+];
 
-  const handleSliderChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: Number.parseFloat(value),
-    }))
-  }
+const styles = `
+.kd-predict{--kd-bg:#07130e;--kd-panel:#0e2017;--kd-line:rgba(193,255,112,.16);--kd-lime:#c5ff70;--kd-text:#edf7ef;--kd-muted:#a7b9ab;color:var(--kd-text);background:radial-gradient(ellipse at 15% 0%,#153b27 0,transparent 42%),var(--kd-bg);min-height:70vh;padding:42px 0 64px}
+.kd-predict *{box-sizing:border-box}.kd-predict .kd-wrap{width:min(1180px,calc(100% - 32px));margin:auto}
+.kd-predict .kd-hero{text-align:center;margin:0 auto 30px;max-width:760px;animation:kd-rise .55s ease both}
+.kd-predict .kd-eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--kd-lime);font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.kd-predict h1{font-size:clamp(30px,4vw,46px);line-height:1.1;letter-spacing:-.04em;margin:12px 0;color:var(--kd-text);font-weight:800}
+.kd-predict .kd-hero p{color:var(--kd-muted);font-size:16px;line-height:1.7;margin:0}
+.kd-predict .kd-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:22px;align-items:start}
+.kd-predict .kd-panel{background:linear-gradient(145deg,rgba(17,43,29,.96),rgba(9,25,17,.97));border:1px solid var(--kd-line);border-radius:22px;padding:clamp(18px,3vw,28px);box-shadow:0 20px 55px rgba(0,0,0,.18);animation:kd-rise .6s ease both}
+.kd-predict .kd-panel h2{font-size:21px;margin:0 0 7px;color:var(--kd-text);font-weight:750}
+.kd-predict .kd-sub{color:var(--kd-muted);font-size:13px;line-height:1.6;margin:0 0 20px}
+.kd-predict .kd-tabs{display:flex;gap:5px;padding:5px;border:1px solid var(--kd-line);background:#07150e;border-radius:13px;margin:0 0 22px}
+.kd-predict .kd-tab{flex:1;border:0;border-radius:9px;padding:10px 12px;color:#b9c9bd;background:transparent;cursor:pointer;font-weight:700}
+.kd-predict .kd-tab[aria-selected=true]{background:var(--kd-lime);color:#122315}
+.kd-predict .kd-fieldgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.kd-predict .kd-field{min-width:0}.kd-predict .kd-labelrow{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:9px}
+.kd-predict .kd-label{font-size:13px;font-weight:700;color:#e5f0e7;display:flex;align-items:center;gap:7px}
+.kd-predict .kd-label svg{color:var(--kd-lime);flex-shrink:0}
+.kd-predict .kd-value{font-size:12px;color:var(--kd-lime);font-weight:800;white-space:nowrap}
+.kd-predict input[type=range]{width:100%;accent-color:var(--kd-lime);cursor:pointer}
+.kd-predict .kd-number{width:100%;background:#07150e;border:1px solid #2d4c38;border-radius:10px;padding:11px 12px;color:#f2f8f3;outline:none}
+.kd-predict .kd-number:focus{border-color:var(--kd-lime);box-shadow:0 0 0 3px rgba(197,255,112,.1)}
+.kd-predict .kd-help{color:#8fa596;font-size:11px;margin-top:5px}
+.kd-predict .kd-submit{width:100%;border:0;border-radius:12px;background:var(--kd-lime);color:#122315;font-weight:850;padding:14px 16px;margin-top:24px;cursor:pointer;transition:transform .18s,filter .18s}
+.kd-predict .kd-submit:hover{filter:brightness(1.06);transform:translateY(-2px)}.kd-predict .kd-submit:disabled{opacity:.65;cursor:wait;transform:none}
+.kd-predict .kd-alert{border-radius:11px;padding:12px 14px;margin-top:15px;font-size:13px;line-height:1.55}.kd-predict .kd-error{background:#391c1b;color:#ffd8d5;border:1px solid #81413c}.kd-predict .kd-notice{background:#172c20;color:#c8e8ce;border:1px solid #315a3d}
+.kd-predict .kd-empty{text-align:center;border:1px dashed #385341;border-radius:16px;padding:42px 18px}
+.kd-predict .kd-emptyicon{width:58px;height:58px;display:grid;place-items:center;margin:0 auto 14px;border-radius:18px;background:#1a3624;color:var(--kd-lime);font-size:25px}
+.kd-predict .kd-empty h3{margin:0 0 7px;color:#eaf4eb;font-size:17px}.kd-predict .kd-empty p{color:var(--kd-muted);font-size:13px;line-height:1.6;margin:0}
+.kd-predict .kd-resultbanner{border-radius:16px;padding:22px;background:linear-gradient(130deg,#204d2e,#102d1e);border:1px solid rgba(197,255,112,.25);text-align:center}
+.kd-predict .kd-resultbanner .kd-crop{font-size:clamp(28px,4vw,36px);font-weight:850;text-transform:capitalize;color:#fff;margin:7px 0}
+.kd-predict .kd-confidence{display:inline-flex;gap:7px;align-items:center;border:1px solid rgba(197,255,112,.3);border-radius:999px;padding:6px 11px;color:var(--kd-lime);font-size:12px;font-weight:750}
+.kd-predict .kd-sectiontitle{font-size:15px!important;margin:20px 0 11px!important}.kd-predict .kd-toplist{display:grid;gap:8px}
+.kd-predict .kd-topitem{display:flex;justify-content:space-between;align-items:center;gap:12px;background:#0a1910;border:1px solid #254431;border-radius:11px;padding:11px 13px}
+.kd-predict .kd-topname{font-weight:700;text-transform:capitalize}.kd-predict .kd-rank{font-size:11px;color:var(--kd-lime);font-weight:800}
+.kd-predict .kd-advice{background:#0a1910;border:1px solid #254431;border-radius:11px;padding:12px 14px;color:#cbd9ce;font-size:13px;line-height:1.65;white-space:pre-wrap}
+@keyframes kd-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:800px){.kd-predict .kd-layout{grid-template-columns:1fr}.kd-predict .kd-fieldgrid{grid-template-columns:1fr}.kd-predict{padding-top:30px}}
+@media(prefers-reduced-motion:reduce){.kd-predict *{animation:none!important;transition:none!important}}
+`;
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: Number.parseFloat(value),
-    }))
-  }
+export default function Predict() {
+  const { currentUser } = useAuth();
+  const [activeTab, setActiveTab] = useState("sliders");
+  const [formData, setFormData] = useState(initialValues);
+  const [prediction, setPrediction] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const changeValue = (key, rawValue) => {
+    setFormData(prev => ({ ...prev, [key]: rawValue === "" ? "" : Number(rawValue) }));
+    setPrediction(null);
+    setNotice("");
+  };
+
+  const validate = () => {
+    for (const field of fields) {
+      const value = formData[field.key];
+      if (value === "" || !Number.isFinite(Number(value))) return `${field.label} is required.`;
+      if (Number(value) < field.min || Number(value) > field.max) {
+        return `${field.label} must be between ${field.min} and ${field.max} ${field.unit}.`;
+      }
+    }
+    return "";
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    const validationError = validate();
+    if (validationError) { setError(validationError); return; }
+    setLoading(true); setError(""); setNotice(""); setPrediction(null);
+    const payload = Object.fromEntries(fields.map(field => [field.key, Number(formData[field.key])]));
 
     try {
-      // Step 1: Get crop prediction from the backend
-      const response = await axios.post(
-        "https://krishidoot-backend.onrender.com/api/predict",
-        formData
-      );
-
+      const response = await axios.post("https://krishidoot-backend.onrender.com/api/predict", payload, { timeout: 45000 });
       const result = response.data;
-
-      // Validate the backend response
-      if (!result || !result.crop) {
-        throw new Error("Invalid response from prediction server.");
+      if (!result || typeof result.crop !== "string" || !result.crop.trim()) {
+        throw new Error("The prediction service returned an unexpected response. Please try again.");
       }
-
-      // Step 2: Show the prediction immediately
       setPrediction(result);
-
-      // Step 3: Save history separately in Firebase
       if (currentUser) {
         try {
           await addDoc(collection(db, "predictions"), {
-            userEmail: currentUser.email,
+            userEmail: currentUser.email || null,
             crop: result.crop,
             confidence: result.confidence ?? null,
-            inputs: formData,
-            createdAt: serverTimestamp(),
+            inputs: payload,
+            createdAt: serverTimestamp()
           });
-        } catch (firebaseError) {
-          console.error(
-            "Firebase history save failed:",
-            firebaseError
-          );
-
-          // Prediction still works even if history saving fails
-          setError(
-            "Crop predicted successfully, but prediction history could not be saved."
-          );
+        } catch (saveError) {
+          console.error("Prediction history could not be saved:", saveError);
+          setNotice("Your recommendation is ready, but it could not be saved to your account history.");
         }
       }
     } catch (err) {
       console.error("Crop prediction failed:", err);
-
-      setPrediction(null);
-      setError(
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to get prediction. Please try again."
-      );
-    } finally {
-      setLoading(false);
-    }
+      setError(err.response?.data?.error || (err.code === "ECONNABORTED"
+        ? "The prediction server took too long to respond. Please try again."
+        : err.message || "Could not get a recommendation. Please try again."));
+    } finally { setLoading(false); }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
+  const topCrops = Array.isArray(prediction?.top3) ? prediction.top3 : [];
+  const fertilizerText = typeof prediction?.fertilizer === "string" ? prediction.fertilizer.trim() : "";
 
-      <main className="flex-grow py-10">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold mb-2">Crop Recommendation</h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Enter your soil parameters and environmental conditions to get personalized crop recommendations.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-8 max-w-6xl mx-auto">
-            <div>
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-2">Soil and Environmental Parameters</h2>
-                <p className="text-gray-600 mb-4">
-                  Adjust the sliders or enter values directly to match your conditions
-                </p>
-
-                <div className="tabs">
-                  <div
-                    className={`tab ${activeTab === "sliders" ? "active" : ""}`}
-                    onClick={() => setActiveTab("sliders")}
-                  >
-                    Sliders
-                  </div>
-                  <div
-                    className={`tab ${activeTab === "manual" ? "active" : ""}`}
-                    onClick={() => setActiveTab("manual")}
-                  >
-                    Manual Input
-                  </div>
-                </div>
-
-                <form onSubmit={handleSubmit}>
-                  <div className={`tab-content ${activeTab === "sliders" ? "active" : ""}`}>
-                    <div className="space-y-6">
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="nitrogen" className="flex items-center">
-                            <FaLeaf className="text-green-500 mr-2" />
-                            Nitrogen (N)
-                          </label>
-                          <span className="slider-value">{formData.nitrogen} kg/ha</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="nitrogen"
-                          name="nitrogen"
-                          min="0"
-                          max="140"
-                          step="1"
-                          value={formData.nitrogen}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="phosphorus" className="flex items-center">
-                            <FaLeaf className="text-green-500 mr-2" />
-                            Phosphorus (P)
-                          </label>
-                          <span className="slider-value">{formData.phosphorus} kg/ha</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="phosphorus"
-                          name="phosphorus"
-                          min="0"
-                          max="140"
-                          step="1"
-                          value={formData.phosphorus}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="potassium" className="flex items-center">
-                            <FaLeaf className="text-green-500 mr-2" />
-                            Potassium (K)
-                          </label>
-                          <span className="slider-value">{formData.potassium} kg/ha</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="potassium"
-                          name="potassium"
-                          min="0"
-                          max="140"
-                          step="1"
-                          value={formData.potassium}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="temperature" className="flex items-center">
-                            <FaThermometerHalf className="text-green-500 mr-2" />
-                            Temperature
-                          </label>
-                          <span className="slider-value">{formData.temperature}°C</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="temperature"
-                          name="temperature"
-                          min="0"
-                          max="45"
-                          step="0.1"
-                          value={formData.temperature}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="humidity" className="flex items-center">
-                            <FaTint className="text-green-500 mr-2" />
-                            Humidity
-                          </label>
-                          <span className="slider-value">{formData.humidity}%</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="humidity"
-                          name="humidity"
-                          min="0"
-                          max="100"
-                          step="1"
-                          value={formData.humidity}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="ph" className="flex items-center">
-                            <FaTachometerAlt className="text-green-500 mr-2" />
-                            pH Value
-                          </label>
-                          <span className="slider-value">{formData.ph}</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="ph"
-                          name="ph"
-                          min="0"
-                          max="14"
-                          step="0.1"
-                          value={formData.ph}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-
-                      <div className="slider-container">
-                        <div className="flex justify-between items-center mb-2">
-                          <label htmlFor="rainfall" className="flex items-center">
-                            <FaCloudRain className="text-green-500 mr-2" />
-                            Rainfall
-                          </label>
-                          <span className="slider-value">{formData.rainfall} mm</span>
-                        </div>
-                        <input
-                          type="range"
-                          id="rainfall"
-                          name="rainfall"
-                          min="0"
-                          max="300"
-                          step="1"
-                          value={formData.rainfall}
-                          onChange={handleSliderChange}
-                          className="slider"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={`tab-content ${activeTab === "manual" ? "active" : ""}`}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="form-group">
-                        <label htmlFor="nitrogen-input" className="flex items-center">
-                          <FaLeaf className="text-green-500 mr-2" />
-                          Nitrogen (N) (kg/ha)
-                        </label>
-                        <input
-                          id="nitrogen-input"
-                          name="nitrogen"
-                          type="number"
-                          value={formData.nitrogen}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="140"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="phosphorus-input" className="flex items-center">
-                          <FaLeaf className="text-green-500 mr-2" />
-                          Phosphorus (P) (kg/ha)
-                        </label>
-                        <input
-                          id="phosphorus-input"
-                          name="phosphorus"
-                          type="number"
-                          value={formData.phosphorus}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="140"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="potassium-input" className="flex items-center">
-                          <FaLeaf className="text-green-500 mr-2" />
-                          Potassium (K) (kg/ha)
-                        </label>
-                        <input
-                          id="potassium-input"
-                          name="potassium"
-                          type="number"
-                          value={formData.potassium}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="140"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="temperature-input" className="flex items-center">
-                          <FaThermometerHalf className="text-green-500 mr-2" />
-                          Temperature (°C)
-                        </label>
-                        <input
-                          id="temperature-input"
-                          name="temperature"
-                          type="number"
-                          value={formData.temperature}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="45"
-                          step="0.1"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="humidity-input" className="flex items-center">
-                          <FaTint className="text-green-500 mr-2" />
-                          Humidity (%)
-                        </label>
-                        <input
-                          id="humidity-input"
-                          name="humidity"
-                          type="number"
-                          value={formData.humidity}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="100"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="ph-input" className="flex items-center">
-                          <FaTachometerAlt className="text-green-500 mr-2" />
-                          pH Value
-                        </label>
-                        <input
-                          id="ph-input"
-                          name="ph"
-                          type="number"
-                          value={formData.ph}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="14"
-                          step="0.1"
-                          className="form-control"
-                        />
-                      </div>
-
-                      <div className="form-group">
-                        <label htmlFor="rainfall-input" className="flex items-center">
-                          <FaCloudRain className="text-green-500 mr-2" />
-                          Rainfall (mm)
-                        </label>
-                        <input
-                          id="rainfall-input"
-                          name="rainfall"
-                          type="number"
-                          value={formData.rainfall}
-                          onChange={handleInputChange}
-                          min="0"
-                          max="300"
-                          className="form-control"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mt-4 mb-4">
-                      {error}
-                    </div>
-                  )}
-
-                  <button type="submit" className="btn w-full mt-6" disabled={loading}>
-                    {loading ? "Analyzing..." : "Get Crop Recommendation"}
-                  </button>
-                </form>
-              </div>
+  return <>
+    <Navbar />
+    <style>{styles}</style>
+    <main className="kd-predict">
+      <div className="kd-wrap">
+        <header className="kd-hero">
+          <span className="kd-eyebrow"><FaSeedling /> GROW SMARTER WITH DATA</span>
+          <h1>Crop Recommendation</h1>
+          <p>Enter your soil nutrients and local weather conditions to request a crop recommendation from the prediction model.</p>
+        </header>
+        <div className="kd-layout">
+          <section className="kd-panel">
+            <h2>Soil &amp; climate details</h2>
+            <p className="kd-sub">Use recent soil-test results and local weather estimates where possible. Switch between sliders and exact values.</p>
+            <div className="kd-tabs" role="tablist" aria-label="Input mode">
+              <button type="button" className="kd-tab" role="tab" aria-selected={activeTab === "sliders"} onClick={() => setActiveTab("sliders")}>Adjust sliders</button>
+              <button type="button" className="kd-tab" role="tab" aria-selected={activeTab === "manual"} onClick={() => setActiveTab("manual")}>Enter values</button>
             </div>
-
-            <div>
-              <div className="card">
-                <h2 className="text-xl font-semibold mb-1">Recommendation Results</h2>
-                <p className="text-gray-500 text-sm mb-6">
-                  Our AI model will analyze your inputs and provide the best crop recommendation
-                </p>
-
-                {prediction ? (
-                  <div className="space-y-6">
-
-                    {/* Top recommended crop banner */}
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white text-center shadow-lg">
-                      <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <FaSeedling className="text-white text-3xl" />
-                      </div>
-                      <p className="text-green-100 text-sm uppercase tracking-widest mb-1 font-medium">Best Recommended Crop</p>
-                      <h3 className="text-4xl font-extrabold capitalize mb-2">{prediction.crop}</h3>
-                      <div className="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-1 text-sm font-semibold">
-                        ✅ {prediction.confidence}% Confidence
-                      </div>
+            <form onSubmit={handleSubmit} noValidate>
+              <div className="kd-fieldgrid">
+                {fields.map(field => {
+                  const Icon = field.icon;
+                  const value = formData[field.key];
+                  return <div className="kd-field" key={field.key}>
+                    <div className="kd-labelrow">
+                      <label className="kd-label" htmlFor={`predict-${field.key}`}><Icon /> {field.label}</label>
+                      <span className="kd-value">{value === "" ? "—" : `${value} ${field.unit}`}</span>
                     </div>
-
-                    {/* Top 3 crops */}
-                    {prediction.top3 && (
-                      <div>
-                        <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                          🏆 Top 3 Crop Options
-                        </h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          {prediction.top3.map((item, index) => {
-                            const configs = [
-                              {
-                                label: "Best Choice",
-                                emoji: "🥇",
-                                bg: "bg-green-50",
-                                border: "border-green-400",
-                                badge: "bg-green-500 text-white",
-                                text: "text-green-800",
-                              },
-                              {
-                                label: "Alternative",
-                                emoji: "🥈",
-                                bg: "bg-yellow-50",
-                                border: "border-yellow-400",
-                                badge: "bg-yellow-400 text-yellow-900",
-                                text: "text-yellow-800",
-                              },
-                              {
-                                label: "Less Suitable",
-                                emoji: "🥉",
-                                bg: "bg-red-50",
-                                border: "border-red-400",
-                                badge: "bg-red-500 text-white",
-                                text: "text-red-800",
-                              },
-                            ];
-                            const c = configs[index];
-                            return (
-                              <div
-                                key={index}
-                                className={`${c.bg} border-2 ${c.border} rounded-xl p-4 flex flex-col items-center text-center gap-2`}
-                              >
-                                <span className="text-2xl">{c.emoji}</span>
-                                <span className={`font-bold capitalize text-base ${c.text}`}>{item.crop}</span>
-                                <span className={`text-xs font-semibold px-3 py-1 rounded-full ${c.badge}`}>
-                                  {c.label}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fertilizer Plan */}
-                    <div className="bg-white rounded-2xl shadow-md border border-green-100 p-5">
-                      <h4 className="text-lg font-bold text-green-700 mb-4 flex items-center gap-2">
-                        🌱 Smart Fertilizer Plan
-                      </h4>
-                      <div className="space-y-3">
-                        {prediction.fertilizer
-                          .split(/\d+\.\s/)
-                          .filter((item) => item.trim() !== "")
-                          .map((line, index) => (
-                            <div
-                              key={index}
-                              className="flex items-start gap-3 bg-green-50 rounded-xl px-4 py-3"
-                            >
-                              <div className="w-7 h-7 rounded-full bg-green-600 text-white text-sm flex items-center justify-center font-bold shrink-0">
-                                {index + 1}
-                              </div>
-                              <p className="text-sm text-gray-700 leading-relaxed">{line.trim()}</p>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-
-                  </div>
-                ) : (
-                  <div className="text-center py-14 border-2 border-dashed border-gray-200 rounded-2xl">
-                    <FaSeedling className="text-gray-300 text-6xl mx-auto mb-4" />
-                    <p className="text-gray-400 text-base font-medium">No results yet</p>
-                    <p className="text-gray-400 text-sm mt-1">Fill in the form above and click <span className="font-semibold text-green-500">Get Crop Recommendation</span></p>
-                  </div>
-                )}
+                    {activeTab === "sliders" ? <>
+                      <input id={`predict-${field.key}`} type="range" min={field.min} max={field.max} step={field.step} value={value === "" ? field.min : value} onChange={e => changeValue(field.key, e.target.value)} />
+                      <div className="kd-help">Range: {field.min}–{field.max} {field.unit}</div>
+                    </> : <>
+                      <input className="kd-number" id={`predict-${field.key}`} type="number" min={field.min} max={field.max} step={field.step} value={value} onChange={e => changeValue(field.key, e.target.value)} required />
+                      <div className="kd-help">Allowed: {field.min}–{field.max} {field.unit}</div>
+                    </>}
+                  </div>;
+                })}
               </div>
-            </div>
-          </div>
+              {error && <div className="kd-alert kd-error" role="alert">{error}</div>}
+              {notice && <div className="kd-alert kd-notice" role="status">{notice}</div>}
+              <button className="kd-submit" type="submit" disabled={loading}>{loading ? "Analyzing your conditions…" : "Get crop recommendation →"}</button>
+            </form>
+          </section>
+
+          <section className="kd-panel" aria-live="polite">
+            <h2>Recommendation results</h2>
+            <p className="kd-sub">Results appear here after the prediction service responds successfully.</p>
+            {!prediction ? <div className="kd-empty">
+              <div className="kd-emptyicon"><FaSeedling /></div>
+              <h3>{loading ? "Evaluating your inputs" : "Your recommendation will appear here"}</h3>
+              <p>{loading ? "Please wait while the model processes the soil and climate values." : "Complete the soil and climate details, then select Get crop recommendation."}</p>
+            </div> : <>
+              <div className="kd-resultbanner">
+                <FaSeedling style={{ color: "#c5ff70", fontSize: 28 }} />
+                <div className="kd-sub" style={{ margin: "8px 0 0", color: "#d4e7d8" }}>MODEL RECOMMENDATION</div>
+                <div className="kd-crop">{prediction.crop}</div>
+                {prediction.confidence !== undefined && prediction.confidence !== null &&
+                  <span className="kd-confidence"><FaCheckCircle /> Confidence: {String(prediction.confidence)}{typeof prediction.confidence === "number" && prediction.confidence <= 1 ? "" : "%"}</span>}
+              </div>
+              {topCrops.length > 0 && <>
+                <h3 className="kd-sectiontitle">Other model-ranked options</h3>
+                <div className="kd-toplist">{topCrops.map((item, index) => {
+                  const cropName = typeof item === "string" ? item : item?.crop;
+                  if (!cropName) return null;
+                  return <div className="kd-topitem" key={`${cropName}-${index}`}><span className="kd-topname">{cropName}</span><span className="kd-rank">RANK {index + 1}</span></div>;
+                })}</div>
+              </>}
+              {fertilizerText && <>
+                <h3 className="kd-sectiontitle"><FaFlask style={{ color: "#c5ff70", marginRight: 7 }} /> Model-provided fertilizer note</h3>
+                <div className="kd-advice">{fertilizerText}</div>
+              </>}
+              <div className="kd-alert kd-notice">This is a model-based suggestion, not a guarantee of yield. Confirm suitability with local seasonal guidance and soil-test results before making major planting or input decisions.</div>
+            </>}
+          </section>
         </div>
-      </main>
-
-      <Footer />
-    </div>
-  )
+      </div>
+    </main>
+    <Footer />
+  </>;
 }
-
-export default Predict
