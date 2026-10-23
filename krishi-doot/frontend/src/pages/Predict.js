@@ -202,7 +202,7 @@ export default function Predict() {
                 <h3 className="kd-sectiontitle"><FaFlask style={{ color: "#c5ff70", marginRight: 7 }} /> Model-provided fertilizer note</h3>
                 <div className="kd-advice">{fertilizerText}</div>
               </>}
-              <div className="kd-alert kd-notice">This is a model-based suggestion, not a guarantee of yield. Confirm suitability with local seasonal guidance and soil-test results before making major planting or input decisions.</div>
+
             </>}
           </section>
         </div>
