@@ -6,6 +6,9 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from ai_provider import generate_chat_response, AIProviderError
+from firebase_admin_setup import verify_firebase_id_token
+from assistant_service import reply_to_farmer
 # Load environment variables from backend/.env
 load_dotenv()
 
@@ -440,7 +443,120 @@ def fertilizer_advisor():
         "crop": crop,
         "advice": advice
     })
-    
+# --------------------------------------------------
+# KrishiDoot AI Assistant
+# --------------------------------------------------
+
+@app.route('/api/assistant/chat', methods=['POST'])
+def assistant_chat():
+
+    data = request.get_json(silent=True)
+
+    if not isinstance(data, dict):
+        return jsonify({
+            "error": "Invalid request. JSON body required."
+        }), 400
+
+    message = data.get("message")
+
+    if not isinstance(message, str) or not message.strip():
+        return jsonify({
+            "error": "Please enter a message."
+        }), 400
+
+    if len(message) > 4000:
+        return jsonify({
+            "error": "Message is too long."
+        }), 400
+
+    # ----------------------------------------------
+    # Verify Firebase authentication
+    # ----------------------------------------------
+
+    authorization = request.headers.get(
+        "Authorization", ""
+    )
+
+    parts = authorization.split()
+
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        return jsonify({
+            "error": "Authentication required."
+        }), 401
+
+    id_token = parts[1]
+
+    try:
+        decoded_token = verify_firebase_id_token(id_token)
+
+    except (FileNotFoundError, RuntimeError):
+        app.logger.exception(
+            "Firebase Admin configuration failed."
+        )
+
+        return jsonify({
+            "error": "Authentication service is unavailable."
+        }), 503
+
+    except Exception:
+        app.logger.warning(
+            "Firebase authentication failed."
+        )
+
+        return jsonify({
+            "error": "Invalid or expired login session."
+        }), 401
+
+    # Never accept userId from the request body.
+    user_id = decoded_token.get("uid")
+
+    if not user_id:
+        return jsonify({
+            "error": "Unable to identify authenticated farmer."
+        }), 401
+
+    # ----------------------------------------------
+    # Generate personalized farming response
+    # ----------------------------------------------
+
+    try:
+
+        result = reply_to_farmer(
+    user_id=user_id,
+    message=message,
+    history=data.get("history", []),
+    location=data.get("location"),
+    language=data.get("language", "Hindi")
+)
+
+        return jsonify(result), 200
+
+    except ValueError as error:
+
+        return jsonify({
+            "error": str(error)
+        }), 400
+
+    except AIProviderError:
+
+        app.logger.warning(
+            "Both AI providers failed."
+        )
+
+        return jsonify({
+            "error": "AI assistant is temporarily unavailable. Please try again."
+        }), 503
+
+
+    except Exception:
+
+        app.logger.exception(
+            "Unexpected assistant endpoint error."
+        )
+
+        return jsonify({
+            "error": "Something went wrong. Please try again."
+        }), 500
     
 @app.route('/api/health', methods=['GET'])
 def health_check():

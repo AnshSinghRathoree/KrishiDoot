@@ -109,6 +109,7 @@ export default function Predict() {
       if (currentUser) {
         try {
           await addDoc(collection(db, "predictions"), {
+            userId: currentUser.uid,
             userEmail: currentUser.email || null,
             crop: result.crop,
             confidence: result.confidence ?? null,
