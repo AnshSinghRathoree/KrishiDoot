@@ -14,7 +14,7 @@ KrishiDoot is a group project focused on making useful agricultural information 
 - **Smart Mandi Marketplace:** Provides a marketplace interface for comparing mandi information.
 - **Cultivation Planning:** Planned workflows for selecting a crop manually or proceeding from a crop recommendation.
 
-> **Note:** KrishiDoot is an ongoing group project. Some features are still under development. The marketplace currently includes prototype/static data, and planned features such as the AI assistant and IoT integration are not yet complete.
+> **Note:** KrishiDoot is an ongoing group project. Some features are still under development. The marketplace currently includes prototype/static data, and planned features such as the IoT integration are not yet complete.
 
 ## Technology Stack
 
@@ -97,7 +97,7 @@ Use your local frontend address shown in the terminal. Make sure the frontend AP
 
 ## Project Status
 
-KrishiDoot is actively being developed. The current prototype includes the crop recommendation and fertilizer-advisor workflows, authentication screens, dashboard and marketplace interface. Additional work is planned for the AI agricultural assistant, complete crop cultivation plans, marketplace logic, UI improvements and experimental IoT integration.
+KrishiDoot is actively being developed. The current prototype includes the crop recommendation and fertilizer-advisor workflows, authentication screens, dashboard and marketplace interface. Additional work planned complete crop cultivation plans, marketplace logic, UI improvements and experimental IoT integration.
 
 ## Contributors
 
