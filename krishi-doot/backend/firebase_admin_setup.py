@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 # Load backend environment variables
 load_dotenv()
 
-# Your existing Firebase project
+# Updated Firebase project
 FIREBASE_PROJECT_ID = os.getenv(
     "FIREBASE_PROJECT_ID",
-    "krishidoot-c1888"
+    "krishidoot-v2"
 )
 
 _firebase_app = None
