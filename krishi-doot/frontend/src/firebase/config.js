@@ -1,16 +1,15 @@
-
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyC8UOPEhAyus6lrEJyhHo1p0ue1vAgfCf4",
-  authDomain: "krishidoot-c1888.firebaseapp.com",
-  projectId: "krishidoot-c1888",
-  storageBucket: "krishidoot-c1888.firebasestorage.app",
-  messagingSenderId: "657742304485",
-  appId: "1:657742304485:web:bf5c172c0239ba25f7f00c",
-  measurementId: "G-PDXRQ5W66T"
+  apiKey: "AIzaSyCmeY3KPVbqaHjfjuHKzUR6wFQd4bQoHuA",
+  authDomain: "krishidoot-v2.firebaseapp.com",
+  projectId: "krishidoot-v2",
+  storageBucket: "krishidoot-v2.firebasestorage.app",
+  messagingSenderId: "753868322970",
+  appId: "1:753868322970:web:cc124e182290c184da4723",
+  measurementId: "G-ZZFRSL0Z96"
 };
 
 const app = initializeApp(firebaseConfig);

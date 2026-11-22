@@ -43,7 +43,9 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-            <a href="/marketplace.html" className="kd-nav-link">Marketplace</a>
+            <Link to="/marketplace" className="kd-nav-link">
+              Smart Mandi
+            </Link>
             {currentUser ? (
               <div className="kd-account-menu">
                 <Link to="/auth/profile" className="kd-avatar" aria-label="Open profile">
@@ -83,7 +85,13 @@ const Navbar = () => {
                 {item.label}
               </Link>
             ))}
-            <a href="/marketplace.html" className="kd-mobile-link" onClick={closeMenu}>Marketplace</a>
+            <Link
+              to="/marketplace"
+              className="kd-mobile-link"
+              onClick={closeMenu}
+            >
+              Smart Mandi
+            </Link>
             {currentUser ? (
               <>
                 <Link to="/auth/profile" className="kd-mobile-link" onClick={closeMenu}>Profile</Link>

@@ -9,6 +9,7 @@ import About from "./pages/About";
 import Predict from "./pages/Predict";
 import FertilizerAdvisor from "./pages/FertilizerAdvisor";
 import Dashboard from "./pages/Dashboard";
+import Marketplace from "./pages/Marketplace";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -33,9 +34,16 @@ function App() {
               element={<FertilizerAdvisor />}
             />
 
+            {/* Smart Mandi Route */}
+            <Route
+              path="/marketplace"
+              element={<Marketplace />}
+            />
+
             {/* Authentication Routes */}
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/register" element={<Register />} />
+
             <Route
               path="/auth/forgot-password"
               element={<ForgotPassword />}
@@ -61,7 +69,7 @@ function App() {
             />
           </Routes>
 
-          {/* Floating AI Assistant - Available Across All Pages */}
+          {/* Floating AI Assistant */}
           <AssistantWidget />
         </>
       </AuthProvider>
